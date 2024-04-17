@@ -23,18 +23,44 @@ def get_game_links(year, week_num):
 
     soup = BeautifulSoup(output.content, 'html.parser')
 
-    td_tags = soup.findAll('td', class_='right gamelink')
+    data = []
 
-    boxscore_links = []
+    game_summaries = soup.finalAll('div', class_='game_summary expanded nohover ')
+    for game in game_summaries:
+        loser_tag = game.find('tr', class_="loser")
+        loser_text = loser_tag.find('a').get_text()
+        loser_score = loser_tag.find('td', class_='right').get_text()
 
-    for tag in td_tags:
-        anchor_tag = tag.find('a')
-        if anchor_tag:
-            href_link = anchor_tag.get('href')
-            full_url = f'https://www.pro-football-reference.com{href_link}'
-            boxscore_links.append(full_url)
+        winner_tag = game.find('tr', class_="winner")
+        winner_text = winner_tag.find('a').get_text()
+        winner_score = winner_tag.find('td', class_='right').get_text()
 
-    return True, boxscore_links
+        td_tag = soup.find('td', class_='right gamelink')
+        anchor_tag = td_tag.find('a')
+        if not anchor_tag:
+            print('anchor tag not found?')
+            continue
+        href_link = anchor_tag.get('href')
+        full_url = f'https://www.pro-football-reference.com{href_link}'
+
+        data.append(
+            (winner_text, winner_score, loser_text, loser_score, full_url)
+        )
+        #boxscore_links.append(full_url)
+        
+
+    # td_tags = soup.findAll('td', class_='right gamelink')
+
+    # boxscore_links = []
+
+    # for tag in td_tags:
+    #     anchor_tag = tag.find('a')
+    #     if anchor_tag:
+    #         href_link = anchor_tag.get('href')
+    #         full_url = f'https://www.pro-football-reference.com{href_link}'
+    #         boxscore_links.append(full_url)
+
+    return True, data
 
 def get_stadium_info(stadium_link):
     #using stadium link to get zip code of stadium
@@ -67,6 +93,10 @@ def get_box_score(boxscore_link):
     score_divs = soup.findAll('div', class_='score')
     scores = [div.get_text() for div in score_divs]
 
+    #team names
+    team_divs = soup.findAll('strong', class_='media-item logo loader')
+
+
     #date
     date = soup.find('div', class_='scorebox_meta')
     date_text = date.div.text
@@ -84,32 +114,34 @@ def get_box_score(boxscore_link):
 
     return True, (scores[0], scores[1], date_text, start_time_text, stadium_link)
 
-def get_all_boxscores(boxscore_links):
+def get_all_boxscores(boxscore_summaries):
     data = []
-    for boxscore_link in boxscore_links:
-        time.sleep(.2)
-        success, boxscore_info = get_box_score(boxscore_link)
+    for winner_text, winner_score, loser_text, loser_score, full_url in boxscore_summaries:
+        time.sleep(1)
+        success, boxscore_info = get_box_score(full_url)
         if not success:
             continue
 
         score_a, score_b, date_text, time_text, stadium_link = boxscore_info
 
-        time.sleep(.2)
+        time.sleep(1)
         success, address = get_stadium_info(stadium_link)
         if not success:
             continue
+
+        print((winner_text, winner_score, loser_text, loser_score, date_text, time_text, address))
         
         data.append(
-            (score_a, score_b, date_text, time_text, address)
+            (winner_text, winner_score, loser_text, loser_score, date_text, time_text, address)
         )
     
     return data
 
 
-success, links = get_game_links(2022, 4)
+success, data = get_game_links(2022, 4)
 if not success:
     exit(1)
-print(get_all_boxscores(links))
+print(get_all_boxscores(data))
 
 
 
