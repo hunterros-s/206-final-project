@@ -33,13 +33,19 @@ def get_icao_code(location):
 
     return True, icao_code
 
-def get_weather(icao_code, datetime):
+def get_from_icao_datetime_weather(icao_code, datetime):
+
+    unix_time = int(datetime.timestamp())
+    # Format datetime as YYYYMMDD string
+    formatted_date = datetime.strftime("%Y%m%d")
+
+    # print(unix_time, formatted_date)
 
     # date is YYYYMMDD format
     # time is unix time (gmt)
 
     # https://api.weather.com/v1/location/KMSY:9:US/observations/historical.json?apiKey=e1f10a1e78da46f5b10a1e78da96f525&units=e&startDate=20200102&endDate=20200102
-    url = f"https://api.weather.com/v1/location/{icao_code}:9:US/observations/historical.json?apiKey={weather_dot_com_api_key}&units=e&startDate={date}&endDate={date}"
+    url = f"https://api.weather.com/v1/location/{icao_code}:9:US/observations/historical.json?apiKey={weather_dot_com_api_key}&units=e&startDate={formatted_date}&endDate={formatted_date}"
     try:
         output = requests.get(url, timeout=3)
         output.raise_for_status()
@@ -61,7 +67,7 @@ def get_weather(icao_code, datetime):
         start_time = observation.get('valid_time_gmt')
         end_time = observation.get('expire_time_gmt')
 
-        if time >= start_time and time <= end_time:
+        if unix_time >= start_time and unix_time <= end_time:
             weather = observation
             break
     
@@ -73,3 +79,10 @@ def get_weather(icao_code, datetime):
     precip = weather.get('precip_hrly')
 
     return True, (temp, wspd, precip)
+
+def get_weather(location, datetime):
+    success, icao = get_icao_code(location)
+    if not success:
+        return False, None
+    
+    return get_from_icao_datetime_weather(icao, datetime)

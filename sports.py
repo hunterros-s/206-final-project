@@ -62,12 +62,12 @@ for boxscore in boxscore_links:
 
         #start time
         #final slice is to take out ": " before the time
-        start_time_strong_tag = soup.find('strong', text="Start Time")
+        start_time_strong_tag = soup.find('strong', string="Start Time")
         start_time_text = start_time_strong_tag.next_sibling.strip('" ')[2:]
 
         #stadium
         #do we want the stadium name or the link to the page of the stadium which has the address
-        stadium_name = soup.find('strong', text='Stadium')
+        stadium_name = soup.find('strong', string='Stadium')
         stadium_href = stadium_name.next_sibling.next_sibling.get('href')
         stadium_link = f'https://www.pro-football-reference.com{stadium_href}'
 
