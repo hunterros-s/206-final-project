@@ -2,10 +2,27 @@ import requests
 import time
 from bs4 import BeautifulSoup
 import sys
-import time
 
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+    ':authority': 'www.pro-football-reference.com',
+    ':method': 'GET',
+    ':scheme': 'https',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Encoding': 'gzip, deflate, br, zstd',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Cache-Control': 'no-cache',
+    'Cookie': 'usprivacy=1Y--; srcssfull=yes; is_live=true; __cf_bm=IzxsVMas6wYmOaE2VtedWGkbOgkeUpXSL7FOKzP5VHc-1713899555-1.0.1.1-Gca8d6zJWEsIig9QBjcUX6fQlpgPY_BP_FOoP_ub4hxxbNYY8N0tPJK7QpxzHb0kd_bhGUTcheBBD5_ovvD_tA; sr_n=2%7CTue%2C%2023%20Apr%202024%2019%3A18%3A56%20GMT; sr_note_box_countdown=39',
+    'Pragma': 'no-cache',
+    'Priority': 'u=0, i',
+    'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"Windows"',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 }
 
 def get_game_links(year, week_num):
@@ -113,8 +130,6 @@ def get_all_boxscores(boxscore_summaries):
         success, address = get_stadium_info(stadium_link)
         if not success:
             continue
-
-        # print((winner_text, winner_score, loser_text, loser_score, date_text, time_text, address))
         
         data.append(
             (winner_text, winner_score, loser_text, loser_score, date_text, time_text, address)
