@@ -9,6 +9,22 @@ def get_db(db_file):
 
     return conn, cursor
 
+
+def create_weather_table(cursor):
+    try:
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS weather (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            wind_speed INTEGER,
+            temperature INTEGER,
+            condition TEXT,
+            UNIQUE(wind_speed, temperature, condition)
+        )
+        ''')
+    except Exception as e:
+        print(e)
+
+
 def create_games_table(cursor):
     try:
         cursor.execute('''
@@ -26,9 +42,21 @@ def create_games_table(cursor):
             first_kicking_FG TEXT,
             first_kicking_LONG INTEGER,
             second_kicking_FG TEXT,
-            second_kicking_LONG INTEGER
+            second_kicking_LONG INTEGER,
+            weather_id INTEGER,
+            FOREIGN KEY(weather_id) REFERENCES weather(id)
         )
         ''')
+    except Exception as e:
+        print(e)
+
+def get_outdoor_events(cursor):
+    try:
+        cursor.execute('''
+            SELECT * FROM games WHERE INDOOR = 0
+        ''')
+        results = cursor.fetchall()
+        return results
     except Exception as e:
         print(e)
 
@@ -51,3 +79,21 @@ def insert_data(conn, cursor, data):
     ''', data)
     conn.commit()
     
+def get_set_weather(conn, cursor, wind_speed, temperature, condition):
+    cursor.execute('''
+        INSERT OR IGNORE INTO weather (wind_speed, temperature, condition) VALUES (?, ?, ?);
+    ''', (wind_speed, temperature, condition))
+    cursor.execute('''
+        SELECT id FROM weather WHERE wind_speed = ? AND temperature = ? AND condition = ?
+    ''', (wind_speed, temperature, condition))
+    row_id = cursor.fetchone()[0]
+    conn.commit()
+    return row_id
+
+def set_weather_id(conn, cursor, id, weather_id):
+    cursor.execute('''
+        UPDATE games
+        SET weather_id = ?
+        WHERE id = ?;
+    ''', (weather_id, id))
+    conn.commit()

@@ -12,26 +12,31 @@ def get_icao_code(location):
         output = requests.get(url, timeout=3)
         output.raise_for_status()  # Raises an exception for 4XX and 5XX status codes
     except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
-        return False, None
+        raise Exception(f"Error: {e}")
 
     if not output.ok:
-        return False, None
+        raise Exception(f"Output not okay: {output}")
     
     data = output.json()
     location = data.get('location')
 
     if location is None:
-        return False, None
+        raise Exception(f"Location is none: {data}")
     
     icao_codes = location.get("icaoCode")
 
     if icao_codes is None:
-        return False, None
+        raise Exception(f"Icao codes is none: {location}")
 
-    icao_code = icao_codes[0]
+    icao_code = None
 
-    return True, icao_code
+    for code in icao_codes:
+        if code is None:
+            continue
+        icao_code = code
+        break
+
+    return icao_code
 
 def get_from_icao_datetime_weather(icao_code, datetime):
 
@@ -50,39 +55,43 @@ def get_from_icao_datetime_weather(icao_code, datetime):
         output = requests.get(url, timeout=3)
         output.raise_for_status()
     except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
-        return False, None
+        raise Exception(f"Error: {e}")
     
     if not output.ok:
-        return False, None
+        raise Exception(f"Output not okay: {output}")
     
     data = output.json()
 
     observations = data.get('observations')
     if observations is None:
-        return False, None
+        raise Exception(f"Observations invalid: {data}")
     
-    weather = None
-    for observation in observations:
+    weather = observations[0]
+    for observation in observations[1:]:
         start_time = observation.get('valid_time_gmt')
         end_time = observation.get('expire_time_gmt')
 
-        if unix_time >= start_time and unix_time <= end_time:
+        if start_time <= unix_time:
             weather = observation
             break
     
     if weather is None:
-        return False, None
+        raise Exception(f"Weather is invalid: {observations}")
     
     temp = weather.get('temp')
     wspd = weather.get('wspd')
-    precip = weather.get('precip_hrly')
+    if wspd is None:
+        wspd = 0
+    wx_phrase = weather.get('wx_phrase')
 
-    return True, (temp, wspd, precip)
+    return (temp, wspd, wx_phrase)
 
 def get_weather(location, datetime):
-    success, icao = get_icao_code(location)
-    if not success:
-        return False, None
+    try:
+        icao = get_icao_code(location)
+    except Exception as e:
+        print(f"Exception: {e}")
+
+    print(location, icao)
     
     return get_from_icao_datetime_weather(icao, datetime)
