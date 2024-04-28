@@ -4,8 +4,9 @@ import argparse
 
 from weather import get_icao_code, get_weather
 from utils import ISO_8601_to_datetime
-from database import get_db, create_games_table, insert_data, check_exist, create_weather_table, get_outdoor_events, get_set_weather, set_weather_id
+from database import get_db, create_games_table, insert_data, check_exist, create_weather_table, get_outdoor_events, get_set_weather, set_weather_id, join_games_weather
 from espn import get_event_links, get_weeks, get_game_info
+from visualizations import make_graphics
 
 
 
@@ -13,8 +14,9 @@ from espn import get_event_links, get_weeks, get_game_info
 
 parser = argparse.ArgumentParser(prog='SI206 final project',
                                 description='gets weather and sports evetns and graphs')
-parser.add_argument('-e', '--espn', action='store_true', help="if enabled it will scrape espn")
-parser.add_argument('-w', '--weather', action='store_true', help="if enabled it will scrape weather, need espn data first")
+parser.add_argument('-e', '--espn', type=int, help="Set the ESPN value, default is 25. Can be changed to a bigger integer.")
+parser.add_argument('-w', '--weather', type=int, help="Set the Weather value, default is 25. Need ESPN data first. Can be changed to a bigger integer.")
+parser.add_argument('-v', '--visual', action='store_true', help="if enabled it will get weather data and game data from db and make visualizations")
 
 def main():
     args = parser.parse_args()
@@ -25,13 +27,19 @@ def main():
     create_weather_table(cursor)
     print("database loaded")
 
-    if args.espn:
+    if args.espn is not None:
+        counter = 0
         years = range(2006, 2024)
+        outer_break = False
         for year in years:
+            if outer_break:
+                break
             print(f"starting year: {year}")
             week_count = get_weeks(year)
             weeks = range(1, 1 + week_count)
             for week in weeks:
+                if outer_break:
+                    break
                 print(f"starting week {week}")
                 events = get_event_links(year, week)
                 for link in events:
@@ -45,10 +53,16 @@ def main():
                     except Exception as e:
                         print(f"exception: {e}")
                         continue
-                    print(data)
+                    counter += 1
+                    print(f"{counter}/{args.espn}: {data}")
                     insert_data(conn, cursor, data)
+                    if counter == args.espn:
+                        outer_break = True
+                        break
         return 0
-    if args.weather:
+    if args.weather is not None:
+
+        counter = 1
 
         results = get_outdoor_events(cursor)
         for result in results:
@@ -58,6 +72,8 @@ def main():
                 continue
 
             dt = ISO_8601_to_datetime(iso)
+
+            print(f"{counter}/{args.weather}")
 
             print(f"getting weather for {location}")
 
@@ -73,9 +89,18 @@ def main():
 
             print(f"set {id}'s weather_id to {w_id}")
 
+            if counter == args.weather:
+                break
+            counter += 1
+
+        return 0
+
+    if args.visual:
+        results = join_games_weather(cursor)
+
+        make_graphics(results)
 
 
-        
 
 
 

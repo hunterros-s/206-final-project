@@ -13,12 +13,19 @@ def get_db(db_file):
 def create_weather_table(cursor):
     try:
         cursor.execute('''
+        CREATE TABLE IF NOT EXISTS condition (
+            condition_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            condition_text TEXT UNIQUE
+        )
+        ''')
+        cursor.execute('''
         CREATE TABLE IF NOT EXISTS weather (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             wind_speed INTEGER,
             temperature INTEGER,
-            condition TEXT,
-            UNIQUE(wind_speed, temperature, condition)
+            condition_id INTEGER,
+            UNIQUE(wind_speed, temperature, condition_id),
+            FOREIGN KEY (condition_id) REFERENCES condition (condition_id)
         )
         ''')
     except Exception as e:
@@ -80,14 +87,31 @@ def insert_data(conn, cursor, data):
     conn.commit()
     
 def get_set_weather(conn, cursor, wind_speed, temperature, condition):
+    # First, check if the condition already exists in the condition table.
     cursor.execute('''
-        INSERT OR IGNORE INTO weather (wind_speed, temperature, condition) VALUES (?, ?, ?);
-    ''', (wind_speed, temperature, condition))
+        SELECT condition_id FROM condition WHERE condition_text = ?;
+    ''', (condition,))
+    result = cursor.fetchone()
+
+    # If the condition does not exist, insert it.
+    if result is None:
+        cursor.execute('''
+            INSERT INTO condition (condition_text) VALUES (?);
+        ''', (condition,))
+        condition_id = cursor.lastrowid
+    else:
+        condition_id = result[0]
+
+    # Now that we have the condition_id, we can insert or ignore into the weather table.
     cursor.execute('''
-        SELECT id FROM weather WHERE wind_speed = ? AND temperature = ? AND condition = ?
-    ''', (wind_speed, temperature, condition))
+        INSERT OR IGNORE INTO weather (wind_speed, temperature, condition_id) VALUES (?, ?, ?);
+    ''', (wind_speed, temperature, condition_id))
+    cursor.execute('''
+        SELECT id FROM weather WHERE wind_speed = ? AND temperature = ? AND condition_id = ?;
+    ''', (wind_speed, temperature, condition_id))
     row_id = cursor.fetchone()[0]
     conn.commit()
+
     return row_id
 
 def set_weather_id(conn, cursor, id, weather_id):
@@ -97,3 +121,20 @@ def set_weather_id(conn, cursor, id, weather_id):
         WHERE id = ?;
     ''', (weather_id, id))
     conn.commit()
+
+def join_games_weather(cursor):
+    cursor.execute('''
+        SELECT
+            games.*,
+            weather.id AS weather_id,
+            weather.wind_speed,
+            weather.temperature,
+            condition.condition_text
+        FROM games
+        INNER JOIN weather
+            ON games.weather_id = weather.id
+        INNER JOIN condition
+            ON weather.condition_id = condition.condition_id
+    ''')
+    results = cursor.fetchall()
+    return results
