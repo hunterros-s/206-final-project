@@ -13,7 +13,8 @@ from visualizations import make_graphics
 # we should make flags which run the program. so liek --nfl --year 2006 starts the data scraping. --weather gets the data --viz visualizes the data
 
 parser = argparse.ArgumentParser(prog='SI206 final project',
-                                description='gets weather and sports evetns and graphs')
+                                description='gets weather and sports evetns and graphs',
+                                epilog='Please only use one argument at a time.')
 parser.add_argument('-e', '--espn', type=int, help="Set the ESPN value, default is 25. Can be changed to a bigger integer.")
 parser.add_argument('-w', '--weather', type=int, help="Set the Weather value, default is 25. Need ESPN data first. Can be changed to a bigger integer.")
 parser.add_argument('-v', '--visual', action='store_true', help="if enabled it will get weather data and game data from db and make visualizations")

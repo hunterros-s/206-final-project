@@ -1,6 +1,8 @@
 
 # passing attempts vs condition (side by side box and whisker plot, x axis: condition, y axis: attempts)
 import matplotlib.pyplot as plt
+import json
+import csv
 import re
 
 def make_graphics(data):
@@ -21,6 +23,10 @@ def make_graphics(data):
         temp_vs_attendance[name].append(
             (temp, attendance)
         )
+    with open('temp_vs_attendance.json', 'w') as fp:
+        json.dump(temp_vs_attendance, fp, indent=2)
+    print(f"Data has been written to temp_vs_attendance.json")
+
     temp_attendance(temp_vs_attendance)
 
     # condition vs attendance (violin chart, x axis condition, y axis average attendance)
@@ -45,6 +51,10 @@ def make_graphics(data):
     for condition in conditons_to_remove:
         del condition_vs_attendance[condition]
 
+    with open('condition_vs_attendance.json', 'w') as fp:
+        json.dump(condition_vs_attendance, fp, indent=2)
+    print(f"Data has been written to condition_vs_attendance.json")
+
     condition_attendance(condition_vs_attendance)
 
     # wspd vs kicking (attempts, long, pct) -- (dot plot, x: wspd, y: longest fg)
@@ -60,6 +70,18 @@ def make_graphics(data):
         if second_kicking_long > 0:
             wspd_x.append(wspd)
             long_y.append(second_kicking_long)
+    combined_data = zip(wspd_x, long_y)
+    # Define filename
+    csv_filename = 'wspd_vs_longest_fg.csv'
+    # Open a new CSV file
+    with open(csv_filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        # Write the header
+        writer.writerow(['Wind Speed', 'Longest Field Goal'])
+        # Write the rows of data
+        writer.writerows(combined_data)
+
+        print(f"Data has been written to {csv_filename}")
     wspd_long(wspd_x, long_y)
 
 
@@ -79,6 +101,21 @@ def make_graphics(data):
 
         wspd_x.append(wspd)
         attempts_y.append(s_attempts)
+    # Now 'wspd_x' contains wind speeds, and 'attempts_y' contains the corresponding total kicking attempts
+    # We'll zip these two lists together for writing to a CSV
+    combined_data = zip(wspd_x, attempts_y)
+
+    # Define filename for the CSV output
+    csv_filename = 'wspd_vs_attempts.csv'
+    # Open a new CSV file to write the data
+    with open(csv_filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        # Write the header row
+        writer.writerow(['Wind Speed', 'Kicking Attempts'])
+        # Write data rows
+        writer.writerows(combined_data)
+
+    print(f"Data has been successfully written to {csv_filename}")
     wspd_attempts(wspd_x, attempts_y)
 
 def wspd_attempts(wspd_x, attempts_y):
